@@ -6,6 +6,7 @@
 
 SOLVER="$1"
 FLUENT_BIN_FOLDER="$2"
+COOL_PROP_FOLDER="$3"
 
 if [ "$SOLVER" = "" ]
 then
@@ -18,20 +19,22 @@ HOME=`pwd`
 
 # Copy CoolProp sources to a local folder called coolprop
 mkdir coolprop
-cp -r ../../CoolProp ./coolprop/CoolProp
+cp -r $COOL_PROP_FOLDER ./coolprop/CoolProp
 
 cd coolprop
-g++ -c CoolProp/*.cpp -ICoolProp -fPIC -D_GNU_SOURCE -ansi -O -Wall -DPTR_RESTRICT= 
+g++ -std=c++11 -c CoolProp/*.cpp -ICoolProp -fPIC -D_GNU_SOURCE -ansi -O2 -Wall -DPTR_RESTRICT= -lCoolProp -ldl
 cd $HOME
 
 echo exit > exit.jou
+
+$FLUENT_FOLDER""/fluent $SOLVER -g -env -i exit.jou > FluentEnvironment.dat 2>&1
+rm exit.jou
 if [ "$FLUENT_BIN_FOLDER" = "" ]
 then
 	fluent $SOLVER -g -env -i exit.jou > FluentEnvironment.dat 2>&1
 else
 	$FLUENT_BIN_FOLDER"/fluent" $SOLVER -g -env -i exit.jou > FluentEnvironment.dat 2>&1
 fi
-rm exit.jou
 FLUENT_INC=`cat FluentEnvironment.dat | grep FLUENT_INC | sed 's/FLUENT[_A-Z]*=//'`
 FLUENT_ARCH=`cat FluentEnvironment.dat | grep FLUENT_ARCH | sed 's/FLUENT[_A-Z]*=//'`
 FLUENT_PROD_DIR=`cat FluentEnvironment.dat | grep FLUENT_PROD_DIR | sed 's/FLUENT[_A-Z]*=//'`
